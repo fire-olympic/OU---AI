@@ -17,12 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract ZIP file
-        run: |
-          unzip -q OU_AI_Project.zip
-          ls -la
-          ls -la ou_ai/
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -35,6 +29,36 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
+      - name: Get Flutter dependencies
+        working-directory: ./ou_ai
+        run: flutter pub get
+
+      - name: Build APK (Debug)
+        working-directory: ./ou_ai
+        run: flutter build apk --debug
+
+      - name: Build APK (Release)
+        working-directory: ./ou_ai
+        run: flutter build apk --release
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-builds
+          path: |
+            ou_ai/build/app/outputs/apk/debug/app-debug.apk
+            ou_ai/build/app/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ou_ai/build/app/outputs/apk/debug/app-debug.apk
+            ou_ai/build/app/outputs/apk/release/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get Flutter dependencies
         working-directory: ./ou_ai
         run: flutter pub get
